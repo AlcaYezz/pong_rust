@@ -8,7 +8,6 @@ pub mod enemy;
 pub mod player;
 pub mod ball;
 
-const RACKET_COLOR: [f32; 4] = [0.25, 0.25, 1., 1.0];
 
 pub trait GameObject {
     fn render(&self, ctxt: &Context, gl: &mut GlGraphics);
