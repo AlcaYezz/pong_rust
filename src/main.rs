@@ -14,17 +14,15 @@ use piston::window::WindowSettings;
 use piston::event_loop::*;
 use piston::input::*;
 use glutin_window::GlutinWindow as Window;
-use opengl_graphics::{OpenGL};
+use opengl_graphics::{OpenGL, GlyphCache, TextureSettings};
 
 use app::App;
 use constante::{WINDOW_HEIGHT, WINDOW_WIDTH};
 
 
 fn main() {
-    // Change this to OpenGL::V2_1 if not working.
     let opengl = OpenGL::V3_2;
 
-    // Create an Glutin window.
     let mut window: Window = WindowSettings::new(
         "spinning-square",
         [WINDOW_WIDTH, WINDOW_HEIGHT]
@@ -34,7 +32,18 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut app = App::new(opengl);
+    use find_folder;
+    let assets = find_folder::Search::ParentsThenKids(3, 3)
+        .for_folder("assets").unwrap();
+    let ref font = assets.join("FiraSans-Regular.ttf");
+
+    let glyph_cache = GlyphCache::new(
+        font,
+        (),
+        TextureSettings::new()
+    ).expect("Unable to load font");
+
+    let mut app = App::new(opengl, glyph_cache);
 
     let mut events = Events::new(EventSettings::new());
     while let Some(e) = events.next(&mut window) {
@@ -50,8 +59,8 @@ fn main() {
             app.input(k, false);
         }
 
-        if let Some(_) = e.update_args() {
-            app.update();
+        if let Some(u) = e.update_args() {
+            app.update(u.dt);
         }
     }
 }

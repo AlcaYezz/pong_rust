@@ -1,23 +1,24 @@
+use opengl_graphics::{GlGraphics, OpenGL, GlyphCache};
+use piston::input::*;
 
-use models::GameObject;
+use models::{GameObject, collide, move_enemy};
 use models::enemy::Enemy;
 use models::player::Player;
 use models::ball::Ball;
-use opengl_graphics::{GlGraphics, OpenGL, GlyphCache, TextureSettings};
-use piston::input::*;
 
-pub struct App {
+pub struct App<'a> {
     pub gl: GlGraphics, // OpenGL drawing backend.
-    //pub glyphs: GlyphCache<'a>,
+    pub glyphs: GlyphCache<'a>,
     pub ball: Ball,
     pub enemy: Enemy,
     pub player: Player,
 }
 
-impl App {
-    pub fn new(opengl: OpenGL) -> App {
+impl<'a> App<'a> {
+    pub fn new(opengl: OpenGL, glyphs: GlyphCache<'a>) -> App<'a> {
         App {
             gl: GlGraphics::new(opengl),
+            glyphs,
             ball: Ball::new(),
             enemy: Enemy::new(),
             player: Player::new(),
@@ -34,16 +35,7 @@ impl App {
         let player = &self.player;
         let ball = &self.ball;
 
-        use find_folder;
-        let assets = find_folder::Search::ParentsThenKids(3, 3)
-            .for_folder("assets").unwrap();
-        let ref font = assets.join("FiraSans-Regular.ttf");
-
-        let mut glyph_cache = GlyphCache::new(
-            font,
-            (),
-            TextureSettings::new()
-        ).expect("Unable to load font");
+        let glyph_cache = &mut self.glyphs;
 
         self.gl.draw(args.viewport(), |c, gl| {
 
@@ -54,7 +46,7 @@ impl App {
             text::Text::new_color(BLACK, 32)
                 .draw(
                     format!("{}", player.score).as_str(),
-                    &mut glyph_cache,
+                    glyph_cache,
                     &DrawState::default(),
                     c.transform.trans(args.width as f64 * 0.25, args.height as f64 * 0.5),
                     gl
@@ -62,7 +54,7 @@ impl App {
             text::Text::new_color(BLACK, 32)
                 .draw(
                     format!("{}", enemy.score).as_str(),
-                    &mut glyph_cache,
+                    glyph_cache,
                     &DrawState::default(),
                     c.transform.trans(args.width as f64 * 0.75, args.height as f64 * 0.5),
                     gl
@@ -75,10 +67,12 @@ impl App {
         });
     }
 
-    pub fn update(&mut self) {
-        self.ball.update(&mut self.enemy, &mut self.player);
-        self.enemy.update(&self.ball);
-        self.player.update();
+    pub fn update(&mut self, dt: f64) {
+        collide(&mut self.ball, &mut self.enemy, &mut self.player);
+        move_enemy(&mut self.enemy, &self.ball);
+        self.ball.update(dt);
+        self.enemy.update(dt);
+        self.player.update(dt);
     }
 
     pub fn input(&mut self, key: Key, is_pressed: bool) {

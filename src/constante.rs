@@ -7,7 +7,7 @@ pub const RACKET_VELOCITY: f64 = 3.;
 pub const RACKET_COLOR: [f32; 4] = [0.25, 0.25, 1., 1.0];
 
 pub const BALL_RADIUS: f64 = 15.;
-pub const BALL_VELOCITY: f64 = 4.5;
+pub const BALL_VELOCITY: f64 = 5.;
 pub const BALL_COLOR:   [f32; 4] = [1.0, 0.25, 0.25, 1.0];
 
 pub const MIN_ANG_ENEMY: f64 = 1.309; //75°
