@@ -2,7 +2,7 @@ use graphics::{Context, ellipse, Transformed};
 use opengl_graphics::GlGraphics;
 use rand::{thread_rng, Rng};
 use std::f64::consts::PI;
-use geom::{Position, clean_angle};
+use geom::{Position, Vector, clean_angle};
 use constante::*;
 use super::GameObject;
 use super::enemy::Enemy;
@@ -57,31 +57,23 @@ impl Ball {
         } else if self.pos.y - BALL_RADIUS <= 0. || self.pos.y + BALL_RADIUS >= WINDOW_HEIGHT as f64{
             self.vy *= -1.;
         }
-        let mut min = (clean_angle(self.angle - PI / 2.) * 1000.) as u32;
-        let mut max = (clean_angle(self.angle + PI / 2.) * 1000.) as u32;
-        if min > max {
-            let tmp = min;
-            min = max;
-            max = tmp;
-        }
 
-        //for i in 0..6283 {
-        for ti in min..max {
-            let angle = i as f64 / 1000.;
-            let pos = Position::new(self.pos.x + BALL_RADIUS * angle.cos(),
-                                             self.pos.y + BALL_RADIUS * angle.sin());
+        let start_player = &Position::new(player.pos.x + RACKET_WIDTH,
+                                          player.pos.y);
 
-            self.colide_racket(&enemy.pos, &pos, false);
-            self.colide_racket(&player.pos, &pos, true);
-        }
+        self.collide_racket(&enemy.pos, false);
+        self.collide_racket(start_player, true);
+
+
         self.pos.x += self.vx;
         self.pos.y += self.vy;
     }
 
-    fn colide_racket(&mut self, racket: &Position, pos: &Position, is_player: bool) {
-        if racket.x <= pos.x && racket.x + RACKET_WIDTH >= pos.x &&
-            racket.y <= pos.y && racket.y + RACKET_HEIGHT >= pos.y {
-            let relative = racket.y + RACKET_HEIGHT - pos.y;
+    fn collide_racket(&mut self, racket: &Position, is_player: bool) {
+        let end = Position::new(racket.x, racket.y + RACKET_HEIGHT);
+
+        if self.collide_edge(racket, end) {
+            let relative = racket.y + RACKET_HEIGHT - self.pos.y;
             let normalize = relative / RACKET_HEIGHT;
             self.angle = clean_angle(if is_player {
                 ((MAX_ANG_PLAYER - MIN_ANG_PLAYER) * normalize + MIN_ANG_PLAYER)
@@ -89,6 +81,33 @@ impl Ball {
                 ((MAX_ANG_ENEMY - MIN_ANG_ENEMY) * normalize + MIN_ANG_ENEMY)
             });
             self.get_velocity();
+        }
+    }
+
+    fn collide_edge(&mut self, origin: &Position, end: Position) -> bool {
+        let d = Vector::new(end.x - origin.x,
+                            end.y - origin.y);
+        let f = Vector::new(origin.x - self.pos.x,
+                            origin.y - self.pos.y);
+
+        let a = d.dot(d);
+        let b = f.dot(d) * 2.;
+        let c = f.dot(f) - BALL_RADIUS * BALL_RADIUS;
+
+        let mut delta = b * b - 4. * a * c;
+        if delta < 0. {
+            false
+        } else {
+            delta = delta.sqrt();
+            let x1 = (-b - delta) / (2. * a);
+            let x2 = (-b + delta) / (2. * a);
+
+            if (x1 >= 0. && x1 <= 1.) ||
+                (x2 >= 0. && x2 <= 1.) {
+                true
+            } else {
+                false
+            }
         }
     }
 }
