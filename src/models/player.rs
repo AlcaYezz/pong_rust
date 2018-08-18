@@ -2,13 +2,9 @@ use graphics::Context;
 use opengl_graphics::GlGraphics;
 use geom;
 use constante::{WINDOW_HEIGHT, RACKET_VELOCITY, RACKET_HEIGHT};
-use super::{GameObject, render_racket};
+use super::{GameObject, render_racket, Direction};
 
-enum Direction {
-    UP,
-    DOWN,
-    STOP,
-}
+
 
 pub struct Player {
     pub score: u32,
@@ -21,7 +17,7 @@ impl Player {
         Player {
             score: 0,
             pos: geom::Position::new(0.,
-                                     (RACKET_HEIGHT as f64 / 2.) - RACKET_HEIGHT as f64 / 2.),
+                                     (WINDOW_HEIGHT / 2) as f64 - RACKET_HEIGHT / 2.),
             dir: Direction::STOP,
         }
     }
@@ -37,8 +33,15 @@ impl Player {
     pub fn move_stop(&mut self) {
         self.dir = Direction::STOP;
     }
+}
 
-    pub fn update(&mut self) {
+
+impl GameObject for Player {
+    fn render(&self, ctxt: &Context, gl: &mut GlGraphics) {
+        render_racket(&self.pos, ctxt, gl);
+    }
+
+    fn update(&mut self, _: f64) {
         match self.dir {
             Direction::UP => {
                 if self.pos.y > 0. {
@@ -50,14 +53,7 @@ impl Player {
                     self.pos.y += RACKET_VELOCITY;
                 }
             }
-            _ =>  {}
+            _ => {}
         }
-    }
-}
-
-
-impl GameObject for Player {
-    fn render(&self, ctxt: &Context, gl: &mut GlGraphics) {
-        render_racket(&self.pos, ctxt, gl);
     }
 }
